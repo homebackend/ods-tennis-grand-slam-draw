@@ -4,18 +4,16 @@ Generate GS ods
 
 import argparse
 import asyncio
-import country_converter as coco
 import sys
 import traceback
 from datetime import datetime
 
 import aiohttp
-from lxml import html, etree
-from odf.element import Element
+import country_converter as coco
+from lxml import etree, html
 from odf.opendocument import load
 from odf.table import Table, TableCell, TableRow
 from odf.text import P
-
 
 TEMPLATE_FILE = "Tennis-Template.ods"
 TABLE_XPATH = "/html/body/div[@class='mw-page-container']" \
