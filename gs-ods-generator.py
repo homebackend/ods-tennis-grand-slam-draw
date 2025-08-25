@@ -32,7 +32,7 @@ async def fetch_data(session: aiohttp.client.ClientSession, url: str):
             tables = tree.xpath(TABLE_XPATH)
             for table in tables:
                 seeds = list(map(str.strip, table.xpath(
-                    "./tbody/tr/td/a/parent::*/preceding-sibling::td/text()")))
+                    "./tbody/tr[position() >= 2]/td[2]/text()")))
 
                 names = []
                 countries = []
@@ -46,9 +46,12 @@ async def fetch_data(session: aiohttp.client.ClientSession, url: str):
                 codes = [c if c != "not found" else "" for c in codes]
 
                 for i, seed in enumerate(seeds):
-                    results.append((row, 0, seed))
-                    results.append((row, 1, names[i]))
-                    results.append((row, 2, codes[i]))
+                    if seed:
+                        results.append((row, 0, seed))
+                    if names[i]:
+                        results.append((row, 1, names[i]))
+                    if codes[i]:
+                        results.append((row, 2, codes[i]))
                     row += 1
 
             return results
