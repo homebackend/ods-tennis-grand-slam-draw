@@ -21,6 +21,14 @@ TABLE_XPATH = "/html/body/div[@class='mw-page-container']" \
     "/main[@id='content']/div[@id='bodyContent']/div[@id='mw-content-text']" \
     "/div/div/h4[contains(text(), 'Section')]/parent::*/following-sibling::table[1]"
 
+seed_column_mapping = {
+    "LL": "L"
+}
+
+
+def map_seed(s):
+    return seed_column_mapping.get(s, s)
+
 
 async def fetch_data(session: aiohttp.client.ClientSession, url: str):
     try:
@@ -31,8 +39,8 @@ async def fetch_data(session: aiohttp.client.ClientSession, url: str):
             results = []
             tables = tree.xpath(TABLE_XPATH)
             for table in tables:
-                seeds = list(map(str.strip, table.xpath(
-                    "./tbody/tr[position() >= 2]/td[2]/text()")))
+                seeds = list(map(map_seed, map(str.strip, table.xpath(
+                    "./tbody/tr[position() >= 2]/td[2]/text()"))))
 
                 names = []
                 countries = []
