@@ -22,7 +22,8 @@ TABLE_XPATH = "/html/body/div[@class='mw-page-container']" \
     "/div/div/h4[contains(text(), 'Section')]/parent::*/following-sibling::table[1]"
 
 seed_column_mapping = {
-    "LL": "L"
+    "LL": "L",
+    "WC": "W",
 }
 
 
@@ -147,8 +148,12 @@ async def main():
     wiki_w = f"https://en.wikipedia.org/wiki/{args.year}_{wiki_t}_%E2%80%93_Women's_singles"
     file_name = f"{args.year}-{wiki_t}.ods"
 
+    headers = {
+        'User-Agent': 'TennisBot/1.0 (https://example.org; your-email@example.com)'
+    }
+
     cto = aiohttp.ClientTimeout(total=args.timeout)
-    async with aiohttp.ClientSession(timeout=cto) as session:
+    async with aiohttp.ClientSession(timeout=cto, headers=headers) as session:
         results_m = await fetch_data(session, wiki_m)
         results_w = await fetch_data(session, wiki_w)
         results = {
