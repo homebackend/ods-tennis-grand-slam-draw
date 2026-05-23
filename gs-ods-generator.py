@@ -40,27 +40,25 @@ async def fetch_data(session: aiohttp.client.ClientSession, url: str):
             results = []
             tables = tree.xpath(TABLE_XPATH)
             for table in tables:
-                seeds = list(map(map_seed, map(str.strip, table.xpath(
-                    "./tbody/tr[position() >= 2]/td[2]/text()"))))
+                for trow in table.xpath("./tbody/tr[position() > 2]"):
+                    seed = map_seed(str.strip(trow.xpath("./td[2]/text()")[0]))
+                    name = trow.xpath("./td[3]/a/text()")[0] if trow.xpath(
+                        "./td[3]/a/text()") else trow.xpath("./td[3]/b/a/text()")[0]
+                    if trow.xpath("./td[3]/span[@class='flagicon']/span/a/@title"):
+                        country = trow.xpath(
+                            "./td[3]/span[@class='flagicon']/span/a/@title")
+                    elif trow.xpath("./td[3]/b/span[@class='flagicon']/span/a/@title"):
+                        country = trow.xpath(
+                            "./td[3]/b/span[@class='flagicon']/span/a/@title")
+                    else:
+                        country = ''
+                    code = coco.convert(names=[country], to='ISO3')
+                    code = code if code != "not found" else ""
 
-                names = []
-                countries = []
-
-                for cell in table.xpath("./tbody/tr/td/a/parent::*"):
-                    names.append(cell.xpath("./a/text()")[0])
-                    country = cell.xpath(
-                        "./span[@class='flagicon']/span/a/@title")
-                    countries.append(country[0] if country else "")
-                codes = coco.convert(names=countries, to='ISO3')
-                codes = [c if c != "not found" else "" for c in codes]
-
-                for i, seed in enumerate(seeds):
                     if seed:
                         results.append((row, 0, seed))
-                    if names[i]:
-                        results.append((row, 1, names[i]))
-                    if codes[i]:
-                        results.append((row, 2, codes[i]))
+                    results.append((row, 1, name))
+                    results.append((row, 2, code))
                     row += 1
 
             return results
@@ -84,10 +82,9 @@ def save_ods_data(template_file_path: str, save_file_path: str, data):
                 raise ValueError(f"Sheet '{sheet_name}' not found.")
 
             table = sheets[sheet_name]
+            rows = table.getElementsByType(TableRow)
 
             for row_index, col_index, value in sheet_data:
-
-                rows = table.getElementsByType(TableRow)
                 if row_index >= len(rows):
                     raise IndexError("Row index is out of range.")
 
@@ -99,13 +96,14 @@ def save_ods_data(template_file_path: str, save_file_path: str, data):
 
                 cell = cells[col_index]
 
-                for child in cell.childNodes:
-                    cell.removeChild(child)
+                while cell.firstChild:
+                    cell.removeChild(cell.firstChild)
 
                 p_element = P(text=str(value))
                 cell.addElement(p_element)
                 cell.setAttribute('valuetype', 'string')
-                cell.setAttribute('value', None)
+                if cell.getAttribute('value'):
+                    cell.delAttribute('value') 
 
         doc.save(save_file_path)
         print(f":: saved file '{save_file_path}'.")
@@ -159,6 +157,7 @@ async def main():
         results = {
             "ML": results_m,
             "FL": results_w,
+            "Seeds": [(1, 5, args.year)],
         }
 
         save_ods_data(args.input_file, file_name, results)
